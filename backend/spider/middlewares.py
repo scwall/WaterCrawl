@@ -166,19 +166,20 @@ class CamofoxMiddleware:
 
     @classmethod
     def from_crawler(cls, crawler):
-        camofox_enabled = crawler.settings.getbool("CAMOFOX_ENABLED", False)
-        if not camofox_enabled:
-            return None
         camofox_url = crawler.settings.get("CAMOFOX_URL")
         camofox_api_key = crawler.settings.get("CAMOFOX_API_KEY")
+        camofox_enabled = crawler.settings.getbool("CAMOFOX_ENABLED", False)
         return cls(
             helpers=crawler.spider.helpers,
             pubsub_service=crawler.spider.pubsub_service,
-            camofox_url=camofox_url,
+            camofox_url=camofox_url if camofox_enabled else None,
             camofox_api_key=camofox_api_key,
         )
 
     async def process_request(self, request, spider):
+        if not self.camofox_url:
+            return
+
         if "skip_playwright" in request.meta and request.meta["skip_playwright"]:
             spider.logger.info("Skipping Camofox for request: %s", request.url)
             return
